@@ -7,6 +7,8 @@
   Last Modified : Oct 25, 2025, 09:30 AM
 */
 
+.section              .text
+.global               _start
 
 .EQU                  DEF_PHY_PERIPH_GPIO_OFF, 0x00200000
 .EQU                  DEF_BUS_OFF,             0x5E000000
@@ -23,9 +25,6 @@
 .EQU                  DEF_PHY_GPSET1,          DEF_BUS_GPSET1-DEF_BUS_OFF
 .EQU                  DEF_PHY_GPCLR0,          DEF_BUS_GPCLR0-DEF_BUS_OFF
 .EQU                  DEF_PHY_GPCLR1,          DEF_BUS_GPCLR1-DEF_BUS_OFF
-
-                      .section .text
-                      .global _start
 
 
 _start:               @configure GPIO2 (RPi-Zero-W pin 3) as output
