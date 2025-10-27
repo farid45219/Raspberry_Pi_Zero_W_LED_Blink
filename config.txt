@@ -1,0 +1,7 @@
+
+kernel=kernel.img
+disable_commandline_tags=1
+disable_auto_turbo=1
+gpu_mem=16
+arm_control=0x200
+uart_2ndstage=1
