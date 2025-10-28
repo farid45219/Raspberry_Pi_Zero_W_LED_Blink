@@ -4,50 +4,41 @@
   Author        : MD. Faridul Islam (faridmdislam@gmail.com)
   Description   : Raspberry Pi Zero W (BCM2835, ARM1176JZF-S) bare-metal LED blink
   Created       : Oct 25, 2025, 09:30 AM
-  Last Modified : Oct 28, 2025, 10:10 AM
+  Last Modified : Oct 28, 2025, 15:36 PM
 */
 
 .section              .text
 .global               _start
 
-.EQU                  DEF_PHY_PERIPH_GPIO_OFF, 0x00200000
-.EQU                  DEF_BUS_OFF,             0x5E000000
-.EQU                  DEF_BUS_RAM_BASE,        0x7E000000
-.EQU                  DEF_PHY_RAM_BASE,        DEF_BUS_RAM_BASE-DEF_BUS_OFF
-
-.EQU                  DEF_BUS_GPFSEL0,         0x7E200000
-.EQU                  DEF_BUS_GPSET0,          0x7E20001C
-.EQU                  DEF_BUS_GPSET1,          0x7E200020
-.EQU                  DEF_BUS_GPCLR0,          0x7E200028
-.EQU                  DEF_BUS_GPCLR1,          0x7E20002C
-.EQU                  DEF_PHY_GPFSEL0,         DEF_BUS_GPFSEL0-DEF_BUS_OFF
-.EQU                  DEF_PHY_GPSET0,          DEF_BUS_GPSET0-DEF_BUS_OFF
-.EQU                  DEF_PHY_GPSET1,          DEF_BUS_GPSET1-DEF_BUS_OFF
-.EQU                  DEF_PHY_GPCLR0,          DEF_BUS_GPCLR0-DEF_BUS_OFF
-.EQU                  DEF_PHY_GPCLR1,          DEF_BUS_GPCLR1-DEF_BUS_OFF
+.equ                  ARM_MMIO_BASE,   0x20000000
+.equ                  ARM_GPIO_BASE,   (ARM_MMIO_BASE+0x00200000)
 
 
 _start:               @configure GPIO2 (RPi-Zero-W pin 3) as output
-                      LDR        R0,   =0x20200000                 @ GPIO0~9 Func select
+                      MOV        SP,   #0x8000                     @ stack pointer
+                      LDR        R0,   =ARM_GPIO_BASE+0x08         @ GPIO20~29 Func select
                       LDR        R1,   [R0]                        @ read current val
-                      LDR        R2,   =0xFFFFFE3F                 @ clear bit6-8
+                      LDR        R2,   =0xFFE3FFFF                 @ clear bit6-8
                       AND        R1,   R1, R2                      @ and two reg
+                      LDR        R2,   =0x00040000                 @ set bit18
+                      ORR        R1,   R1, R2                      @ set bit18
                       STR        R1,   [R0]                        @ store val
-
-@blink_loop:
+                      
+_loop_start:
                       @set GPIO2
-                      LDR        R0,   =0x2020001C                 @ load GPSET0 reg addr
-                      MOV        R1,   #0x04                       @ set bit2
+                      LDR        R0,   =ARM_GPIO_BASE+0x1C         @ load GPSET0 reg addr
+                      LDR        R1,   =0x04000000                 @ set bit2
                       STR        R1,   [R0]                        @ store val
-                      B          .
+                      BL         delay                             @ call delay
+
 
                       @clear GPIO2
-                      LDR        R0,   =DEF_PHY_GPCLR0             @ load GPCLR0 reg addr
-                      MOV        R1,   #(1<<2)                     @ set bit2
+                      LDR        R0,   =ARM_GPIO_BASE+0x28         @ load GPSET0 reg addr
+                      LDR        R1,   =0x04000000                 @ set bit2
                       STR        R1,   [R0]                        @ store val
-                      BL         delay                             @ delay
+                      BL         delay                             @ call delay
 
-                      @B          blink_loop
+                      B          _loop_start                       @ repeat
 
 
 delay:
@@ -56,5 +47,3 @@ delay_loop:
                       SUBS       R2,   R2, #1
                       BNE        delay_loop
                       BX         LR
-
-
