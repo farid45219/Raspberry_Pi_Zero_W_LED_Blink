@@ -2,9 +2,9 @@
 /*
   File          : main.S
   Author        : MD. Faridul Islam (faridmdislam@gmail.com)
-  Description   : Raspberry Pi Zero W (BCM2835) bare-metal LED blink
+  Description   : Raspberry Pi Zero W (BCM2835, ARM1176JZF-S) bare-metal LED blink
   Created       : Oct 25, 2025, 09:30 AM
-  Last Modified : Oct 25, 2025, 09:30 AM
+  Last Modified : Oct 28, 2025, 10:10 AM
 */
 
 .section              .text
@@ -28,18 +28,18 @@
 
 
 _start:               @configure GPIO2 (RPi-Zero-W pin 3) as output
-                      LDR        R0,   =DEF_PHY_GPFSEL0            @ GPIO0~9 Func select
+                      LDR        R0,   =0x20200000                 @ GPIO0~9 Func select
                       LDR        R1,   [R0]                        @ read current val
-                      BIC        R1,   R1, #(7<<6)                 @ clear bit6-8
-                      ORR        R1,   R1, #(1<<6)                 @ set as output
+                      LDR        R2,   =0xFFFFFE3F                 @ clear bit6-8
+                      AND        R1,   R1, R2                      @ and two reg
                       STR        R1,   [R0]                        @ store val
 
-blink_loop:
+@blink_loop:
                       @set GPIO2
-                      LDR        R0,   =DEF_PHY_GPSET0             @ load GPSET0 reg addr
-                      MOV        R1,   #(1<<2)                     @ set bit2
+                      LDR        R0,   =0x2020001C                 @ load GPSET0 reg addr
+                      MOV        R1,   #0x04                       @ set bit2
                       STR        R1,   [R0]                        @ store val
-                      BL         delay                             @ delay
+                      B          .
 
                       @clear GPIO2
                       LDR        R0,   =DEF_PHY_GPCLR0             @ load GPCLR0 reg addr
@@ -47,7 +47,7 @@ blink_loop:
                       STR        R1,   [R0]                        @ store val
                       BL         delay                             @ delay
 
-                      B          blink_loop
+                      @B          blink_loop
 
 
 delay:
