@@ -10,7 +10,8 @@
 .section              .text
 .global               _start
 .global               GPIO_Set_Mode
-.global               GPIO_Set_State
+.global               GPIO_Set_Output
+.global               GPIO_Clear_Output
 
                       @ define base offsets
 .equ                  ARM_MMIO_BASE_PHY,   0x20000000
@@ -62,22 +63,20 @@
 _start:               @configure GPIO26 (RPi-Zero-W pin 37) as output
                       MOV        SP,   #0x8000                     @ stack pointer
 
-                      LDR        R0,   =26                         @ target gpio 26
+                      LDR        R0,   =26                         @ assign gpio number
                       LDR        R1,   =DEF_GPIO_MODE_OUTPUT       @ output mode
                       BL         GPIO_Set_Mode                     @ call func to config
 
 _loop_start:
                       @set GPIO26
-                      LDR        R0,   =DEF_GPSET0_PHY             @ load GPSET0 reg addr
-                      LDR        R1,   =0x04000000                 @ set bit26
-                      STR        R1,   [R0]                        @ store val
+                      LDR        R0,   =26                         @ assign gpio number
+                      BL         GPIO_Set_Output                   @ call gpio high
                       BL         delay                             @ call delay
 
 
                       @clear GPIO26
-                      LDR        R0,   =DEF_GPCLR0_PHY             @ load GPCLR0 reg addr
-                      LDR        R1,   =0x04000000                 @ set bit26
-                      STR        R1,   [R0]                        @ store val
+                      LDR        R0,   =26                         @ assign gpio number
+                      BL         GPIO_Clear_Output                 @ call gpio low
                       BL         delay                             @ call delay
 
                       B          _loop_start                       @ repeat
@@ -149,29 +148,53 @@ _gpio_mode_exit:
 
 
 
-
-                      @ arg1(R0)->PinNumber
+@ Function for setting a gpio pin
+@ arg1(R0)->PinNumber
 GPIO_Set_Output:
 _gpio_set_0_to_31: 
                       CMP        R0,   #31                         @ compare with 31
                       BHI        _gpio_set_32_to_53                @ jump to next section
                       LDR        R1,   =DEF_GPSET0_PHY             @ GPIO0~31 output state select
                       B          _gpio_set_assign                  @ jump to assignment
-
 _gpio_set_32_to_53:   
-
                       CMP        R0,   #53                         @ compare with 53
                       BHI        _gpio_set_exit                    @ jump to exit
                       LDR        R1,   =DEF_GPSET1_PHY             @ GPIO0~9 Func select
                       SUBS       R0,   R0, #31                     @ subtract pin-base(31)
                       B          _gpio_set_assign                  @ jump to assignment
 _gpio_set_assign:   
-/* 
                       MOV        R3,   #1                          
                       LSL        R3,   R3, R0                      @ offset masked val
                       LDR        R2,   [R1]                        @ load curr val
-                      ORR        R2,   R0, R1                      @ config mode bits
+                      ORR        R2,   R2, R3                      @ config mode bits
 _gpio_set_exit:
                       BX         LR                                @ return from func
 
-*/
+
+
+
+@ Function for clearing a gpio pin
+@ arg1(R0)->PinNumber
+GPIO_Clear_Output:
+_gpio_clear_0_to_31: 
+                      CMP        R0,   #31                         @ compare with 31
+                      BHI        _gpio_clear_32_to_53              @ jump to next section
+                      LDR        R1,   =DEF_GPCLR0_PHY             @ GPIO0~31 output state select
+                      B          _gpio_clear_assign                @ jump to assignment
+_gpio_clear_32_to_53:   
+                      CMP        R0,   #53                         @ compare with 53
+                      BHI        _gpio_clear_exit                  @ jump to exit
+                      LDR        R1,   =DEF_GPCLR1_PHY             @ GPIO0~9 Func select
+                      SUBS       R0,   R0, #31                     @ subtract pin-base(31)
+                      B          _gpio_clear_assign                @ jump to assignment
+_gpio_clear_assign:   
+                      MOV        R3,   #1                          
+                      LSL        R3,   R3, R0                      @ offset masked val
+                      LDR        R2,   [R1]                        @ load curr val
+                      ORR        R2,   R2, R3                      @ config mode bits
+_gpio_clear_exit:
+                      BX         LR                                @ return from func
+
+
+
+
